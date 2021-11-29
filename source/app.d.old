@@ -1,0 +1,177 @@
+import raylib;
+import basic;
+import colorswap;
+import std.math;
+
+enum windowx=400;
+enum windowy=400;
+
+int inversetrianglefunc(int x){
+	x+=1;
+	import std.math; import std.conv;
+	float x_=x*float(2);
+	x_=sqrt(x_)+.5;
+	x_=floor(x_);
+	int y=x_.to!int;
+	return y;
+}
+int trianglefunc(int x){
+	return x*(x+1)/2;
+}
+
+struct pos{
+	int a;
+	float b;
+	float c;
+}
+
+pos findpos(float x){
+	pos o;
+	o.a=x.ceil.to!int.inversetrianglefunc;
+	float f=x-trianglefunc(o.a)+o.a+1;
+	o.b=min(f,1);
+	o.c=f-o.b;
+	o.a--;
+	return o;
+}
+pos findpos2(float x, int w){
+	pos o;
+	o.a=x.ceil.to!int/w;
+	float f=x-o.a*w+1;
+	o.b=min(f,1);
+	o.c=f-o.b;
+	return o;
+}
+enum zero=Vector2(10,10);
+enum left=Vector2(0,10);
+enum up=Vector2(10,0);
+enum right=-left;
+enum down=-up;
+enum upright=up+right;
+enum downleft=down+left;
+
+
+enum width=20;
+enum hieght=25;
+enum least=min(width,hieght);
+enum greater=max(width,hieght);
+enum which=width>=hieght;
+enum breakpoint1=(least-1).trianglefunc;
+enum breakpoint2=(width*hieght)-breakpoint1-1;
+enum breakpoint3=width*hieght-1;
+enum parity=(least+which)%2;
+
+enum C=left*(width-1)+up*(hieght-1)+zero;
+enum parity2=(greater-least)%2;
+
+Vector2 grid(float i){
+	int x=i.floor.to!int;
+	if(x<breakpoint1){
+		pos p=findpos(i);
+		p.a--;
+		Vector2 o=zero;
+		if((p.a-1)%2){
+			o=o+p.a*left;
+			o=o+p.b*left;
+			o=o+p.c*upright;
+		} else {
+			o=o+p.a*up;
+			o=o+p.b*up;
+			o=o+p.c*downleft;
+		}
+		return o;
+	}
+	if(x<breakpoint2){
+		i-=breakpoint1;
+		static if(width>hieght){
+			Vector2 A=zero+left*(least-1)-left;
+			Vector2 B=zero+up  *(least-1)-left;
+			Vector2 a=upright;
+			Vector2 b=downleft;
+			Vector2 dir=left;
+		} else {
+			Vector2 B=zero+left*(least-1)-up;
+			Vector2 A=zero+up  *(least-1)-up;
+			Vector2 b=upright;
+			Vector2 a=downleft;
+			Vector2 dir=up;
+		}
+		Vector2 o;
+		pos p=findpos2(i,least);
+		if(p.a%2==parity){
+			o=B;
+			o=o+p.a*dir;
+			o=o+p.b*dir;
+			o=o+p.c*b;
+		} else {
+			o=A;
+			o=o+p.a*dir;
+			o=o+p.b*dir;
+			o=o+p.c*a;
+		}
+		return o;
+	}
+	if(i<breakpoint3){
+		i=breakpoint3-i;
+		Vector2 o=C;
+		pos p=findpos(i);
+		p.a--;
+		//p.writeln;
+		if(p.a%2==parity2){
+			o=o-p.a*left;
+			o=o-p.b*left;
+			o=o-p.c*upright;
+		} else {
+			o=o-p.a*up;
+			o=o-p.b*up;
+			o=o-p.c*downleft;
+		}
+		return o;
+		
+	}
+	return Vector2(0,0);
+}
+Vector2 grid_(float i){
+	pos p=findpos2(i,10);
+	p.writeln;
+	p.a--;
+	Vector2 o;
+	if((p.a-1)%2){
+		o=zero;
+		o=o+p.a*up;
+		o=o+p.b*up;
+		o=o+p.c*left;
+	} else {
+		o=zero+9*left;
+		o=o+p.a*up;
+		o=o+p.b*up;
+		o=o+p.c*right;
+	}
+	return o;
+}
+
+void main(){
+	InitWindow(windowx, windowy, "Hello, Raylib-D!");
+	SetWindowPosition(2000,0);
+	SetTargetFPS(60);
+	mixin makecolors!();
+	loaddefualtcolors;
+	float starting=-10;
+	while (!WindowShouldClose()){
+		BeginDrawing();
+			ClearBackground(background);
+			foreach(i;0..200){
+				//if(i+starting<=0||i%5==0){goto exit;}
+				if(i+starting<=0){goto exit;}
+				//spiral(i).writeln;
+				DrawCircleV(grid(i+starting),3,colors[i%8+8]);
+				exit:
+			}
+			if(IsKeyPressed(KeyboardKey.KEY_F11)){
+				changecolors;
+			}
+			starting+=.01;
+		EndDrawing();
+	}
+	CloseWindow();
+}
